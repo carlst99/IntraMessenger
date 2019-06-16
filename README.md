@@ -2,7 +2,11 @@
 Allows messages to be queued and distributed within your app from a singleton class. Subscribers are given the choice of what they subscribe to.
 
 ### Installation
-Todo NuGet details
+[nuget](https://www.nuget.org/packages/IntraMessaging)
+
+```
+Install-Package IntraMessaging
+```
 
 ### Usage
 All interaction with the IntraMessager takes place through the singleton class
