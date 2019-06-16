@@ -1,0 +1,15 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>netstandard2.0</TargetFramework>
+    <Authors>Carl Stephens</Authors>
+    <Company />
+    <Product />
+    <Description>A simple centralised intra-app messager</Description>
+    <PackageProjectUrl>github.com/carlst99/IntraMessaging</PackageProjectUrl>
+    <RepositoryUrl>github.com/carlst99/IntraMessaging</RepositoryUrl>
+    <PackageTags>messaging</PackageTags>
+    <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+  </PropertyGroup>
+
+</Project>
