@@ -2,7 +2,7 @@
 
 namespace IntraMessaging
 {
-    public abstract class Message
+    public abstract class Message : IMessage
     {
         public object Sender { get; }
         public Guid Id { get; set; }
