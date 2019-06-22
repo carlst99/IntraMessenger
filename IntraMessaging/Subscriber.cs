@@ -3,7 +3,7 @@ using System.Linq;
 
 namespace IntraMessaging
 {
-    public struct Subscriber
+    public class Subscriber
     {
         /// <summary>
         /// Gets the type of subscription that this subscriber is requesting
@@ -25,23 +25,30 @@ namespace IntraMessaging
         /// </summary>
         public Guid UnsubscribeKey { get; }
 
-        internal Subscriber(Action<IMessage> callback, Guid unsubKey, Type[] subTypes = null)
+        internal Subscriber(Action<IMessage> callback, Guid unsubKey, Type[] messageTypes = null)
         {
             Callback = callback;
             UnsubscribeKey = unsubKey;
-            MessageTypes = subTypes;
+            MessageTypes = messageTypes;
 
-            if (subTypes == null)
+            if (messageTypes == null || messageTypes.Length <= 0)
                 SubscriptionSet = SubscriptionSet.All;
             else
                 SubscriptionSet = SubscriptionSet.Defined;
+        }
+
+        internal Subscriber(Action<IMessage> callback, Guid unsubKey, Type[] messageTypes, SubscriptionSet set)
+        {
+            Callback = callback;
+            UnsubscribeKey = unsubKey;
+            MessageTypes = messageTypes;
+            SubscriptionSet = set;
         }
 
         /// <summary>
         /// Initiates the callback if the subscriber has requested to receive the type of the provided message
         /// </summary>
         /// <typeparam name="T"></typeparam>
-        /// <param name="sender">The sender of the message</param>
         /// <param name="message">The message to send</param>
         /// <returns>A value indicating whether the callback was run</returns>
         internal bool InitiateCallback<T>(T message) where T : IMessage
@@ -53,8 +60,13 @@ namespace IntraMessaging
                     return true;
                 case SubscriptionSet.Defined:
                     if (MessageTypes.Contains(typeof(T)))
+                    {
                         Callback.Invoke(message);
-                    return true;
+                        return true;
+                    } else
+                    {
+                        return false;
+                    }
                 default:
                     return false;
             }
@@ -70,10 +82,8 @@ namespace IntraMessaging
 
         public bool Equals(Subscriber sub)
         {
-            return sub.SubscriptionSet == SubscriptionSet
-                && sub.Callback.Equals(Callback)
-                && sub.MessageTypes.SequenceEqual(MessageTypes)
-                && sub.UnsubscribeKey == UnsubscribeKey;
+            return sub.SubscriptionSet.Equals(SubscriptionSet)
+                && sub.UnsubscribeKey.Equals(UnsubscribeKey);
         }
 
         public override int GetHashCode()
@@ -82,16 +92,10 @@ namespace IntraMessaging
             {
                 int hash = 17;
                 hash = (hash * 23) + SubscriptionSet.GetHashCode();
-                hash = (hash * 23) + Callback.GetHashCode();
-                hash = (hash * 23) + MessageTypes.GetHashCode();
                 hash = (hash * 23) + UnsubscribeKey.GetHashCode();
                 return hash;
             }
         }
-
-        public static bool operator ==(Subscriber sub1, Subscriber sub2) => sub1.Equals(sub2);
-
-        public static bool operator !=(Subscriber sub1, Subscriber sub2) => !sub1.Equals(sub2);
 
         #endregion
     }
@@ -104,11 +108,11 @@ namespace IntraMessaging
         /// <summary>
         /// Subscribed to all message types
         /// </summary>
-        All,
+        All = 0,
 
         /// <summary>
         /// Subscribed to a defined subset of message types
         /// </summary>
-        Defined
+        Defined = 1
     }
 }

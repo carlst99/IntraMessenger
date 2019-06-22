@@ -8,7 +8,7 @@ namespace IntraMessaging
         ICollection<Subscriber> Subscribers { get; }
 
         void Enqueue<T>(T message) where T : IMessage;
-        void Subscribe(Action<IMessage> callback, Guid unsubKey, Type[] requestedMessageTypes = null);
+        Guid Subscribe(Action<IMessage> callback, Type[] requestedMessageTypes = null);
         void Unsubscribe(Guid unsubKey);
     }
 }
