@@ -80,12 +80,25 @@ namespace IntraMessaging
             return unsubKey;
         }
 
-        public void Unsubscribe(Guid unsubKey)
+        public void Unsubscribe(Guid unsubscribeKey)
         {
-            if (_subscribers.ContainsKey(unsubKey))
-                _subscribers.Remove(unsubKey);
-            else
-                throw new ArgumentException("A subscriber with the specified unsubscription key does not exist");
+            switch (OperationMode)
+            {
+                case Mode.HeavyMessaging:
+                    if (_subscribers.ContainsKey(unsubscribeKey))
+                        _subscribers.Remove(unsubscribeKey);
+                    else
+                        throw new ArgumentException("A subscriber with the specified unsubscription key does not exist");
+                    break;
+                case Mode.HeavySubscribe:
+                    foreach (List<Subscriber> element in _subscriptions.Values)
+                    {
+                        int index = element.FindIndex(s => s.UnsubscribeKey == unsubscribeKey);
+                        if (index != -1)
+                            element.RemoveAt(index);
+                    }
+                    break;
+            }
         }
 
         /// <summary>
