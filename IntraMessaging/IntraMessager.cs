@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.CompilerServices;
-using System.Threading.Tasks;
 
 [assembly: InternalsVisibleTo("IntraMessaging.Tests")]
 
@@ -54,7 +53,7 @@ namespace IntraMessaging
         /// <summary>
         /// Gets the <see cref="Mode"/> of this messenger
         /// </summary>
-        public Mode OperationMode { get; }
+        public Mode OperationMode { get; private set; }
 
         #endregion
 
@@ -71,7 +70,12 @@ namespace IntraMessaging
 
         #endregion
 
-        public void Enqueue<T>(T message) where T : IMessage
+        /// <summary>
+        /// Queues a message to be broadcast to all applicable subscriptions
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="message"></param>
+        public void Send<T>(T message) where T : IMessage
         {
             switch (OperationMode)
             {
@@ -85,15 +89,25 @@ namespace IntraMessaging
             }
         }
 
-        public async Task EnqueueAsync<T>(T message) where T : IMessage
-        {
-            await Task.Factory.StartNew(() => Enqueue(message)).ConfigureAwait(false);
-        }
-
+        /// <summary>
+        /// Creates a subscription to the message queue
+        /// </summary>
+        /// <param name="callback">The callback to invoke when a message is broadcast</param>
+        /// <param name="requestedMessageTypes">The types of message to subscribe to</param>
+        /// <returns>A GUID which can be used to unsubscribe from the message queue</returns>
         public Guid Subscribe(Action<IMessage> callback, Type[] requestedMessageTypes = null)
         {
             if (callback == null)
                 throw new ArgumentException("Callback cannot be null");
+
+            if (requestedMessageTypes != null)
+            {
+                foreach (Type type in requestedMessageTypes)
+                {
+                    if (!(type is IMessage))
+                        throw new ArgumentException("All requested message types must inherit " + nameof(IMessage));
+                }
+            }
 
             Guid unsubKey = Guid.NewGuid();
             Subscriber subscriber = new Subscriber(callback, unsubKey, requestedMessageTypes);
@@ -117,6 +131,10 @@ namespace IntraMessaging
             return unsubKey;
         }
 
+        /// <summary>
+        /// Removes a subscription from the message queue
+        /// </summary>
+        /// <param name="unsubscribeKey">The key returned when subscribing the object</param>
         public void Unsubscribe(Guid unsubscribeKey)
         {
             switch (OperationMode)
@@ -174,6 +192,18 @@ namespace IntraMessaging
                     }
                     break;
             }
+
+            OperationMode = changeTo;
+        }
+
+        /// <summary>
+        /// Clears any subscriptions and changes to the default mode <see cref="Mode.HeavySubscribe"/>
+        /// </summary>
+        public void Reset()
+        {
+            _subscribers.Clear();
+            _subscriptions.Clear();
+            OperationMode = Mode.HeavySubscribe;
         }
     }
 }
