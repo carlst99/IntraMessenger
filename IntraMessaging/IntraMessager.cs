@@ -10,8 +10,14 @@ namespace IntraMessaging
 {
     public sealed class IntraMessenger : IIntraMessenger
     {
+        #region Fields
+
         private readonly Dictionary<Guid, Subscriber> _subscribers;
         private readonly Dictionary<Type, List<Subscriber>> _subscriptions;
+
+        #endregion
+
+        #region Properties
 
         public static IIntraMessenger Instance { get; } = new IntraMessenger();
 
@@ -50,6 +56,10 @@ namespace IntraMessaging
         /// </summary>
         public Mode OperationMode { get; }
 
+        #endregion
+
+        #region Constructors
+
         static IntraMessenger() { }
 
         private IntraMessenger()
@@ -59,10 +69,20 @@ namespace IntraMessaging
             OperationMode = Mode.HeavySubscribe;
         }
 
+        #endregion
+
         public void Enqueue<T>(T message) where T : IMessage
         {
-            foreach (Subscriber subscriber in Subscribers)
-                subscriber.InitiateCallback(message);
+            switch (OperationMode)
+            {
+                case Mode.HeavyMessaging:
+                    foreach (Subscriber subscriber in Subscribers)
+                        subscriber.InitiateCallback(message);
+                    break;
+                case Mode.HeavySubscribe:
+                    _subscriptions[typeof(T)].ForEach(s => s.InitiateCallback(message, true));
+                    break;
+            }
         }
 
         public async Task EnqueueAsync<T>(T message) where T : IMessage

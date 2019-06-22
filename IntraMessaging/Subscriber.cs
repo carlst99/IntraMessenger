@@ -50,9 +50,16 @@ namespace IntraMessaging
         /// </summary>
         /// <typeparam name="T"></typeparam>
         /// <param name="message">The message to send</param>
+        /// <param name="skipTypeChecking">Indicates whether to skip the comparison to <see cref="MessageTypes"/> before initiating the callback</param>
         /// <returns>A value indicating whether the callback was run</returns>
-        internal bool InitiateCallback<T>(T message) where T : IMessage
+        internal bool InitiateCallback<T>(T message, bool skipTypeChecking = false) where T : IMessage
         {
+            if (skipTypeChecking)
+            {
+                Callback.Invoke(message);
+                return true;
+            }
+
             switch (SubscriptionSet)
             {
                 case SubscriptionSet.All:
