@@ -110,6 +110,19 @@ namespace IntraMessaging
                         }
                     }
                     break;
+                case Mode.HeavySubscribe:
+                    _subscriptions.Clear();
+                    foreach (Subscriber element in _subscribers.Values)
+                    {
+                        foreach (Type type in element.MessageTypes)
+                        {
+                            if (!_subscriptions.ContainsKey(type))
+                                _subscriptions.Add(type, new List<Subscriber>());
+
+                            _subscriptions[type].Add(element);
+                        }
+                    }
+                    break;
             }
         }
     }
