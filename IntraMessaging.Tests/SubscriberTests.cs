@@ -54,6 +54,17 @@ namespace IntraMessaging.Tests
         }
 
         [Fact]
+        public void TestInitiateCallbackWithNoTypeChecking()
+        {
+            bool callback = false;
+            Type[] subTypes = new Type[] { typeof(TestMessage) };
+            Subscriber subscriber = new Subscriber((_) => callback = true, Guid.Empty, subTypes);
+
+            subscriber.InitiateCallback<IMessage>(null, true);
+            Assert.True(callback);
+        }
+
+        [Fact]
         public void TestEquals()
         {
             Subscriber s = GetSubscriber();
