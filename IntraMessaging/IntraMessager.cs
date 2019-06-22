@@ -76,7 +76,24 @@ namespace IntraMessaging
                 throw new ArgumentException("Callback cannot be null");
 
             Guid unsubKey = Guid.NewGuid();
-            _subscribers.Add(unsubKey, new Subscriber(callback, unsubKey, requestedMessageTypes));
+            Subscriber subscriber = new Subscriber(callback, unsubKey, requestedMessageTypes);
+
+            switch (OperationMode)
+            {
+                case Mode.HeavyMessaging:
+                    _subscribers.Add(unsubKey, subscriber);
+                    break;
+                case Mode.HeavySubscribe:
+                    foreach (Type type in requestedMessageTypes)
+                    {
+                        if (!_subscriptions.ContainsKey(type))
+                            _subscriptions.Add(type, new List<Subscriber>());
+
+                        _subscriptions[type].Add(subscriber);
+                    }
+                    break;
+            }
+
             return unsubKey;
         }
 
