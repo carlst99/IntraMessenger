@@ -8,12 +8,12 @@ using System.Threading.Tasks;
 
 namespace IntraMessaging
 {
-    public sealed class IntraMessager : IIntraMessager
+    public sealed class IntraMessenger : IIntraMessenger
     {
         private readonly Dictionary<Guid, Subscriber> _subscribers;
         private readonly Dictionary<Type, List<Subscriber>> _subscriptions;
 
-        public static IIntraMessager Instance { get; } = new IntraMessager();
+        public static IIntraMessenger Instance { get; } = new IntraMessenger();
 
         /// <summary>
         /// Gets a read only collection of the subscriptions by type to this messenger when using <see cref="Mode.HeavySubscribe"/>
@@ -50,9 +50,9 @@ namespace IntraMessaging
         /// </summary>
         public Mode OperationMode { get; }
 
-        static IntraMessager() { }
+        static IntraMessenger() { }
 
-        private IntraMessager()
+        private IntraMessenger()
         {
             _subscribers = new Dictionary<Guid, Subscriber>();
             _subscriptions = new Dictionary<Type, List<Subscriber>>();
@@ -86,6 +86,31 @@ namespace IntraMessaging
                 _subscribers.Remove(unsubKey);
             else
                 throw new ArgumentException("A subscriber with the specified unsubscription key does not exist");
+        }
+
+        /// <summary>
+        /// Changes the <see cref="Mode"/> of this messenger. Note that this can be an intensive operation
+        /// </summary>
+        /// <param name="changeTo">The mode to change to</param>
+        public void ChangeMode(Mode changeTo)
+        {
+            if (changeTo == OperationMode)
+                return;
+
+            switch (changeTo)
+            {
+                case Mode.HeavyMessaging:
+                    _subscribers.Clear();
+                    foreach (List<Subscriber> element in _subscriptions.Values)
+                    {
+                        foreach (Subscriber subscriber in element)
+                        {
+                            if (!_subscribers.ContainsKey(subscriber.UnsubscribeKey))
+                                _subscribers.Add(subscriber.UnsubscribeKey, subscriber);
+                        }
+                    }
+                    break;
+            }
         }
     }
 }
