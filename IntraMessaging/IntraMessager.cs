@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.CompilerServices;
@@ -11,7 +10,7 @@ namespace IntraMessaging
 {
     public sealed class IntraMessager : IIntraMessager
     {
-        private readonly List<Subscriber> _subscribers;
+        private readonly Dictionary<Guid, Subscriber> _subscribers;
         private readonly Dictionary<Type, List<Subscriber>> _subscriptions;
 
         public static IIntraMessager Instance { get; } = new IntraMessager();
@@ -42,7 +41,7 @@ namespace IntraMessaging
                 if (OperationMode != Mode.HeavyMessaging)
                     throw new InvalidOperationException("Can only retrieve this collection in " + nameof(Mode.HeavyMessaging) + " mode");
                 else
-                    return _subscribers.AsReadOnly();
+                    return _subscribers.Values.ToList().AsReadOnly();
             }
         }
 
@@ -55,9 +54,9 @@ namespace IntraMessaging
 
         private IntraMessager()
         {
-            _subscribers = new List<Subscriber>();
-            OperationMode = Mode.HeavySubscribe;
+            _subscribers = new Dictionary<Guid, Subscriber>();
             _subscriptions = new Dictionary<Type, List<Subscriber>>();
+            OperationMode = Mode.HeavySubscribe;
         }
 
         public void Enqueue<T>(T message) where T : IMessage
@@ -69,7 +68,6 @@ namespace IntraMessaging
         public async Task EnqueueAsync<T>(T message) where T : IMessage
         {
             await Task.Factory.StartNew(() => Enqueue(message)).ConfigureAwait(false);
-            return;
         }
 
         public Guid Subscribe(Action<IMessage> callback, Type[] requestedMessageTypes = null)
@@ -78,18 +76,16 @@ namespace IntraMessaging
                 throw new ArgumentException("Callback cannot be null");
 
             Guid unsubKey = Guid.NewGuid();
-            _subscribers.Add(new Subscriber(callback, unsubKey, requestedMessageTypes));
+            _subscribers.Add(unsubKey, new Subscriber(callback, unsubKey, requestedMessageTypes));
             return unsubKey;
         }
 
         public void Unsubscribe(Guid unsubKey)
         {
-            if (unsubKey == default || unsubKey == Guid.Empty)
-                throw new ArgumentException("The unsubscribe key cannot be empty or default");
-
-            Subscriber subscriber = _subscribers.Find(s => s.UnsubscribeKey == unsubKey);
-            if (!subscriber.Equals(default))
-                _subscribers.Remove(subscriber);
+            if (_subscribers.ContainsKey(unsubKey))
+                _subscribers.Remove(unsubKey);
+            else
+                throw new ArgumentException("A subscriber with the specified unsubscription key does not exist");
         }
     }
 }
