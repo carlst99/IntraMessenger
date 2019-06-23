@@ -9,19 +9,19 @@ Install-Package IntraMessaging
 ```
 
 ### Usage
-All interaction with the IntraMessager takes place through the singleton class
+All interaction with the IntraMessenger takes place through the singleton class
 
 ```c#
-IIntraMessager messager = IntraMessage.Instance;
+IIntraMessenger messenger = IntraMessenger.Instance;
 ```
 
-To publish a message, use the ```Enqueue``` function
+To publish a message, use the ```Send``` function
 
 ``` c#
-Enqueue<T>(T message) where T : IMessage
+Send<T>(T message) where T : IMessage
 ...
-messager.Enqueue(new RequestDialogMessage());
+messenger.Send(new RequestDialogMessage());
 ```
 
 In the above example, the ```RequestDialogMessage``` type is your own custom type, inheriting either the abstract ```Message``` class or the ```IMessage``` interface.
-All types inheriting ```IMessage``` have optional sender, id and tag fields.
+All types implementing ```IMessage``` have optional sender, id and tag fields.
