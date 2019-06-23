@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.Linq;
 using System.Runtime.CompilerServices;
 
@@ -18,7 +19,7 @@ namespace IntraMessaging
 
         #region Properties
 
-        public static IIntraMessenger Instance { get; } = new IntraMessenger();
+        public static IntraMessenger Instance { get; } = new IntraMessenger();
 
         /// <summary>
         /// Gets a read only collection of the subscriptions by type to this messenger when using <see cref="Mode.HeavySubscribe"/>
@@ -30,9 +31,8 @@ namespace IntraMessaging
                 if (OperationMode != Mode.HeavySubscribe)
                     throw new InvalidOperationException("Can only retrieve this collection in " + nameof(Mode.HeavySubscribe) + " mode");
 
-                return _subscriptions
-                    .Cast<dynamic>()
-                    .ToDictionary(k => (Type)k.Key, v => (ICollection<Subscriber>)v.Value.AsReadOnly());
+                var converted = _subscriptions.ToDictionary(k => k.Key, v => (ICollection<Subscriber>)v.Value.AsReadOnly());
+                return new ReadOnlyDictionary<Type, ICollection<Subscriber>>(converted);
             }
         }
 
@@ -61,7 +61,10 @@ namespace IntraMessaging
 
         static IntraMessenger() { }
 
-        private IntraMessenger()
+        /// <summary>
+        /// This ctor used internally to setup instance and for testing
+        /// </summary>
+        internal IntraMessenger()
         {
             _subscribers = new Dictionary<Guid, Subscriber>();
             _subscriptions = new Dictionary<Type, List<Subscriber>>();

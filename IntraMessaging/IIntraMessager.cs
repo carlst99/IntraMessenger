@@ -6,6 +6,7 @@ namespace IntraMessaging
     public interface IIntraMessenger
     {
         ICollection<Subscriber> Subscribers { get; }
+        IDictionary<Type, ICollection<Subscriber>> Subscriptions { get; }
         Mode OperationMode { get; }
 
         void Send<T>(T message) where T : IMessage;
