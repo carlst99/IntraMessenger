@@ -215,12 +215,12 @@ namespace IntraMessaging
         /// <summary>
         /// Clears any subscriptions and changes to the default mode <see cref="Mode.HeavySubscribe"/>
         /// </summary>
-        public void Reset()
+        public void Reset(Mode mode = Mode.HeavySubscribe)
         {
             _subscribers.Clear();
             _subscriptions.Clear();
             _subscriptions.Add(SEND_TO_ALL_TYPE, new List<Subscriber>());
-            OperationMode = Mode.HeavySubscribe;
+            OperationMode = mode;
         }
     }
 }

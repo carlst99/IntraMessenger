@@ -13,6 +13,6 @@ namespace IntraMessaging
         Guid Subscribe(Action<IMessage> callback, Type[] requestedMessageTypes = null);
         void Unsubscribe(Guid unsubKey);
         void ChangeMode(Mode changeTo);
-        void Reset();
+        void Reset(Mode mode);
     }
 }
