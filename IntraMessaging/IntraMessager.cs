@@ -10,7 +10,7 @@ namespace IntraMessaging
 {
     public sealed class IntraMessenger : IIntraMessenger
     {
-        private static readonly Type SEND_TO_ALL_TYPE = typeof(IMessage);
+        internal static readonly Type SEND_TO_ALL_TYPE = typeof(IMessage);
 
         #region Fields
 
@@ -26,6 +26,7 @@ namespace IntraMessaging
         /// <summary>
         /// Gets a read only collection of the subscriptions by type to this messenger when using <see cref="Mode.HeavySubscribe"/>
         /// </summary>
+        /// <exception cref="InvalidOperationException">Thrown when this messenger is not in the correct mode</exception>
         public IDictionary<Type, ICollection<Subscriber>> Subscriptions
         {
             get
@@ -41,6 +42,7 @@ namespace IntraMessaging
         /// <summary>
         /// Gets a read only collection of subscribers to this messenger when using <see cref="Mode.HeavyMessaging"/>
         /// </summary>
+        /// <exception cref="InvalidOperationException">Thrown when this messenger is not in the correct mode</exception>
         public ICollection<Subscriber> Subscribers
         {
             get
@@ -105,10 +107,12 @@ namespace IntraMessaging
         /// <param name="callback">The callback to invoke when a message is broadcast</param>
         /// <param name="requestedMessageTypes">The types of message to subscribe to</param>
         /// <returns>A GUID which can be used to unsubscribe from the message queue</returns>
+        /// <exception cref="ArgumentNullException">Thrown when the callback is null</exception>
+        /// <exception cref="ArgumentException">Thrown when the provided message types do not inherit from <see cref="IMessage"/></exception>
         public Guid Subscribe(Action<IMessage> callback, Type[] requestedMessageTypes = null)
         {
             if (callback == null)
-                throw new ArgumentException("Callback cannot be null");
+                throw new ArgumentNullException("Callback cannot be null");
 
             if (requestedMessageTypes != null)
             {
@@ -151,6 +155,7 @@ namespace IntraMessaging
         /// Removes a subscription from the message queue
         /// </summary>
         /// <param name="unsubscribeKey">The key returned when subscribing the object</param>
+        /// <exception cref="ArgumentException">Thrown when an invalid key is provided</exception>
         public void Unsubscribe(Guid unsubscribeKey)
         {
             switch (OperationMode)
@@ -166,9 +171,12 @@ namespace IntraMessaging
                     {
                         int index = element.FindIndex(s => s.UnsubscribeKey == unsubscribeKey);
                         if (index != -1)
+                        {
                             element.RemoveAt(index);
+                            return;
+                        }
                     }
-                    break;
+                    throw new ArgumentException("A subscriber with the specified unsubscription key does not exist");
             }
         }
 

@@ -40,6 +40,8 @@ namespace IntraMessaging.Tests
 
         #endregion
 
+        #region Send Tests
+
         [Fact]
         public void TestSendHeavyMessaging()
         {
@@ -50,16 +52,6 @@ namespace IntraMessaging.Tests
 
             messenger.Send<TestMessage>(null);
             Assert.True(callback);
-
-            //messenger.Reset(Mode.HeavyMessaging);
-            //callback = false;
-            //messenger.Subscribe((_) => callback = true, new Type[] { typeof(TestMessage) });
-
-            //messenger.Send<UnregisteredMessage>(null);
-            //Assert.False(callback);
-
-            //messenger.Send<TestMessage>(null);
-            //Assert.True(callback);
         }
 
         [Fact]
@@ -82,6 +74,60 @@ namespace IntraMessaging.Tests
 
             messenger.Send<TestMessage>(null);
             Assert.True(callback);
+        }
+
+        #endregion
+
+        [Fact]
+        public void TestSubscribe()
+        {
+            bool callback = false;
+
+            IntraMessenger messenger = new IntraMessenger();
+            Assert.Throws<ArgumentNullException>(() => messenger.Subscribe(null));
+            Assert.Throws<ArgumentException>(() => messenger.Subscribe((_) => callback = true, new Type[] { typeof(object) }));
+
+            messenger.ChangeMode(Mode.HeavyMessaging);
+            Guid id = messenger.Subscribe((_) => callback = true);
+            Assert.NotEmpty(messenger.Subscribers);
+            Assert.NotEqual(default, id);
+            Assert.NotEqual(Guid.Empty, id);
+
+            messenger.Reset(Mode.HeavySubscribe);
+            messenger.Subscribe((_) => callback = true);
+            Assert.NotEmpty(messenger.Subscriptions);
+            Assert.NotEmpty(messenger.Subscriptions[IntraMessenger.SEND_TO_ALL_TYPE]);
+
+            messenger.Reset(Mode.HeavySubscribe);
+            messenger.Subscribe((_) => callback = true, new Type[] { typeof(TestMessage) });
+            Assert.NotEmpty(messenger.Subscriptions);
+            Assert.Empty(messenger.Subscriptions[IntraMessenger.SEND_TO_ALL_TYPE]);
+            Assert.True(messenger.Subscriptions.ContainsKey(typeof(TestMessage)));
+
+            // This really just removes the build warning
+            Assert.False(callback);
+        }
+
+        [Fact]
+        public void TestUnsubscribe()
+        {
+            bool callback = false;
+            IntraMessenger messenger = new IntraMessenger();
+            messenger.ChangeMode(Mode.HeavyMessaging);
+
+            Guid unsubKey = messenger.Subscribe((_) => callback = true);
+            messenger.Unsubscribe(unsubKey);
+            Assert.Empty(messenger.Subscribers);
+            Assert.Throws<ArgumentException>(() => messenger.Unsubscribe(unsubKey));
+
+            messenger.Reset(Mode.HeavySubscribe);
+            unsubKey = messenger.Subscribe((_) => callback = true, new Type[] { typeof(TestMessage) });
+
+            messenger.Unsubscribe(unsubKey);
+            Assert.Empty(messenger.Subscriptions[typeof(TestMessage)]);
+            Assert.Throws<ArgumentException>(() => messenger.Unsubscribe(unsubKey));
+
+            Assert.False(callback);
         }
     }
 }
