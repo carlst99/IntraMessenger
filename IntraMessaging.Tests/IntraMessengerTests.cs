@@ -78,6 +78,8 @@ namespace IntraMessaging.Tests
 
         #endregion
 
+        #region Subscribe Tests
+
         [Fact]
         public void TestSubscribe()
         {
@@ -126,6 +128,29 @@ namespace IntraMessaging.Tests
             messenger.Unsubscribe(unsubKey);
             Assert.Empty(messenger.Subscriptions[typeof(TestMessage)]);
             Assert.Throws<ArgumentException>(() => messenger.Unsubscribe(unsubKey));
+
+            Assert.False(callback);
+        }
+
+        #endregion
+
+        [Fact]
+        public void TestReset()
+        {
+            bool callback = false;
+            IntraMessenger messenger = new IntraMessenger();
+            messenger.ChangeMode(Mode.HeavyMessaging);
+            messenger.Subscribe((_) => callback = true);
+
+            messenger.Reset(Mode.HeavyMessaging);
+            Assert.Empty(messenger.Subscribers);
+            Assert.Equal(Mode.HeavyMessaging, messenger.OperationMode);
+
+            messenger.ChangeMode(Mode.HeavySubscribe);
+            messenger.Subscribe((_) => callback = true, new Type[] { typeof(TestMessage) });
+            messenger.Reset();
+            Assert.True(messenger.Subscriptions.Count == 1);
+            Assert.Empty(messenger.Subscriptions[IntraMessenger.SEND_TO_ALL_TYPE]);
 
             Assert.False(callback);
         }
