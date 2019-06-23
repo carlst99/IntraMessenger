@@ -10,6 +10,8 @@ namespace IntraMessaging
 {
     public sealed class IntraMessenger : IIntraMessenger
     {
+        private static readonly Type SEND_TO_ALL_TYPE = typeof(IMessage);
+
         #region Fields
 
         private readonly Dictionary<Guid, Subscriber> _subscribers;
@@ -67,7 +69,10 @@ namespace IntraMessaging
         internal IntraMessenger()
         {
             _subscribers = new Dictionary<Guid, Subscriber>();
-            _subscriptions = new Dictionary<Type, List<Subscriber>>();
+            _subscriptions = new Dictionary<Type, List<Subscriber>>
+            {
+                { SEND_TO_ALL_TYPE, new List<Subscriber>() }
+            };
             OperationMode = Mode.HeavySubscribe;
         }
 
@@ -78,7 +83,7 @@ namespace IntraMessaging
         /// </summary>
         /// <typeparam name="T"></typeparam>
         /// <param name="message"></param>
-        public void Send<T>(T message) where T : IMessage
+        public void Send<T>(T message) where T : IMessage, new()
         {
             switch (OperationMode)
             {
@@ -87,7 +92,9 @@ namespace IntraMessaging
                         subscriber.InitiateCallback(message);
                     break;
                 case Mode.HeavySubscribe:
-                    _subscriptions[typeof(T)].ForEach(s => s.InitiateCallback(message, true));
+                    if (_subscriptions.ContainsKey(typeof(T)))
+                        _subscriptions[typeof(T)].ForEach(s => s.InitiateCallback(message, true));
+                    _subscriptions[SEND_TO_ALL_TYPE].ForEach(s => s.InitiateCallback(message, true));
                     break;
             }
         }
@@ -107,7 +114,7 @@ namespace IntraMessaging
             {
                 foreach (Type type in requestedMessageTypes)
                 {
-                    if (!(type is IMessage))
+                    if (!typeof(IMessage).IsAssignableFrom(type))
                         throw new ArgumentException("All requested message types must inherit " + nameof(IMessage));
                 }
             }
@@ -121,6 +128,12 @@ namespace IntraMessaging
                     _subscribers.Add(unsubKey, subscriber);
                     break;
                 case Mode.HeavySubscribe:
+                    if (requestedMessageTypes == null)
+                    {
+                        _subscriptions[SEND_TO_ALL_TYPE].Add(subscriber);
+                        break;
+                    }
+
                     foreach (Type type in requestedMessageTypes)
                     {
                         if (!_subscriptions.ContainsKey(type))
@@ -206,6 +219,7 @@ namespace IntraMessaging
         {
             _subscribers.Clear();
             _subscriptions.Clear();
+            _subscriptions.Add(SEND_TO_ALL_TYPE, new List<Subscriber>());
             OperationMode = Mode.HeavySubscribe;
         }
     }
