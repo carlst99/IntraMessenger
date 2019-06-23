@@ -135,6 +135,32 @@ namespace IntraMessaging.Tests
         #endregion
 
         [Fact]
+        public void TestChangeMode()
+        {
+            bool callback = false;
+            IntraMessenger messenger = new IntraMessenger();
+            messenger.ChangeMode(Mode.HeavyMessaging);
+            Assert.Equal(Mode.HeavyMessaging, messenger.OperationMode);
+            messenger.Subscribe((_) => callback = true, new Type[] { typeof(TestMessage)});
+
+            messenger.ChangeMode(Mode.HeavySubscribe);
+            Assert.True(messenger.Subscriptions.ContainsKey(typeof(TestMessage)));
+            Assert.NotEmpty(messenger.Subscriptions[typeof(TestMessage)]);
+            Assert.True(messenger.Subscriptions.Count == 2);
+
+            messenger.ChangeMode(Mode.HeavyMessaging);
+            Assert.True(messenger.Subscribers.Count == 1);
+
+            messenger.Reset(Mode.HeavyMessaging);
+            messenger.Subscribe((_) => callback = false);
+            messenger.ChangeMode(Mode.HeavySubscribe);
+            Assert.True(messenger.Subscriptions.Count == 1);
+            Assert.NotEmpty(messenger.Subscriptions[IntraMessenger.SEND_TO_ALL_TYPE]);
+
+            Assert.False(callback);
+        }
+
+        [Fact]
         public void TestReset()
         {
             bool callback = false;

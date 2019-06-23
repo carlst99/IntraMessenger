@@ -192,7 +192,6 @@ namespace IntraMessaging
             switch (changeTo)
             {
                 case Mode.HeavyMessaging:
-                    _subscribers.Clear();
                     foreach (List<Subscriber> element in _subscriptions.Values)
                     {
                         foreach (Subscriber subscriber in element)
@@ -201,11 +200,18 @@ namespace IntraMessaging
                                 _subscribers.Add(subscriber.UnsubscribeKey, subscriber);
                         }
                     }
+                    _subscriptions.Clear();
+                    _subscriptions.Add(SEND_TO_ALL_TYPE, new List<Subscriber>());
                     break;
                 case Mode.HeavySubscribe:
-                    _subscriptions.Clear();
                     foreach (Subscriber element in _subscribers.Values)
                     {
+                        if (element.MessageTypes == null)
+                        {
+                            _subscriptions[SEND_TO_ALL_TYPE].Add(element);
+                            continue;
+                        }
+
                         foreach (Type type in element.MessageTypes)
                         {
                             if (!_subscriptions.ContainsKey(type))
@@ -214,6 +220,7 @@ namespace IntraMessaging
                             _subscriptions[type].Add(element);
                         }
                     }
+                    _subscribers.Clear();
                     break;
             }
 
