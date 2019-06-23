@@ -3,4 +3,8 @@
     public class TestMessage : Message
     {
     }
+
+    public class UnregisteredMessage : Message
+    {
+    }
 }

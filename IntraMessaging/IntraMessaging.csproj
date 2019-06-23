@@ -14,7 +14,17 @@
     <PackageLicenseFile>LICENSE</PackageLicenseFile>
     <NeutralLanguage>en-NZ</NeutralLanguage>
     <RepositoryType>Git</RepositoryType>
-    <Version>1.0.1</Version>
+    <Version>1.0.3</Version>
+    <PackageReleaseNotes>BREAKING CHANGES:
+- IntraMessenger.Subscribe no longer takes Guid key, instead opting to return a unique key each time
+- Renamed IntraMessager to IntraMessenger
+- Removed IntraMessenger.EnqueueAsync
+- Renamed IntraMessenger.Enqueue to Send
+
+Other Changelog:
+- Add operation modes to suit different use cases
+- Added IntraMessenger.Reset
+</PackageReleaseNotes>
   </PropertyGroup>
 
   <ItemGroup>
@@ -22,10 +32,6 @@
       <Pack>True</Pack>
       <PackagePath></PackagePath>
     </None>
-  </ItemGroup>
-
-  <ItemGroup>
-    <PackageReference Include="Microsoft.CSharp" Version="4.5.0" />
   </ItemGroup>
 
 </Project>

@@ -6,7 +6,7 @@
     public enum Mode
     {
         /// <summary>
-        /// Use this mode if you have a large number of subscribers and/or are sending a large number of messages
+        /// Default mode. Use this mode if you have a large number of subscribers and/or are sending a large number of messages
         /// </summary>
         HeavySubscribe = 0,
 
