@@ -51,7 +51,29 @@ namespace IntraMessaging.Tests
             messenger.Send<TestMessage>(null);
             Assert.True(callback);
 
-            messenger.Reset(Mode.HeavyMessaging);
+            //messenger.Reset(Mode.HeavyMessaging);
+            //callback = false;
+            //messenger.Subscribe((_) => callback = true, new Type[] { typeof(TestMessage) });
+
+            //messenger.Send<UnregisteredMessage>(null);
+            //Assert.False(callback);
+
+            //messenger.Send<TestMessage>(null);
+            //Assert.True(callback);
+        }
+
+        [Fact]
+        public void TestSendHeavySubscribe()
+        {
+            bool callback = false;
+            IntraMessenger messenger = new IntraMessenger();
+            messenger.ChangeMode(Mode.HeavySubscribe);
+            messenger.Subscribe((_) => callback = true);
+
+            messenger.Send<TestMessage>(null);
+            Assert.True(callback);
+
+            messenger.Reset(Mode.HeavySubscribe);
             callback = false;
             messenger.Subscribe((_) => callback = true, new Type[] { typeof(TestMessage) });
 
@@ -60,12 +82,6 @@ namespace IntraMessaging.Tests
 
             messenger.Send<TestMessage>(null);
             Assert.True(callback);
-        }
-
-        [Fact]
-        public void TestSendHeavySubscribe()
-        {
-
         }
     }
 }
