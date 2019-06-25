@@ -11,7 +11,7 @@
         HeavySubscribe = 0,
 
         /// <summary>
-        /// Use this mode if you are frequently subscribing/unsubscribing. Otherwise use <see cref="Mode.HeavySubscribe"/>
+        /// Use this mode if you are frequently subscribing/unsubscribing. Otherwise use <see cref="HeavySubscribe"/>
         /// </summary>
         HeavyMessaging = 1
     }
