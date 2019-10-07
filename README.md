@@ -1,5 +1,5 @@
 # IntraMessaging
-Allows messages to be queued and distributed within your app from a singleton class. Subscribers are given the choice of what they subscribe to.
+Allows messages to be distributed within your app/projects from a singleton class, without tight coupling. Subscribers are given the choice of what they subscribe to.
 
 ### Installation
 Install from [nuget](https://www.nuget.org/packages/IntraMessaging)
@@ -9,7 +9,7 @@ Install-Package IntraMessaging
 ```
 
 ### Usage
-All interaction with the IntraMessenger takes place through the singleton class
+All interaction with the IntraMessenger takes place through the singleton class. You can also register this to your IoC container.
 
 ```c#
 IIntraMessenger messenger = IntraMessenger.Instance;
@@ -17,7 +17,7 @@ IIntraMessenger messenger = IntraMessenger.Instance;
 
 **Subscribing/Unsubscribing**
 
-To subscribe to the message stream, use the `IntraMessenger.Subscribe` method
+To subscribe to the message delegate, use the `IntraMessenger.Subscribe` method
 
 ```c#
 /// <summary>
@@ -42,7 +42,7 @@ messenger.Send(new RequestDialogMessage());
 ```
 
 In the above example, the ```RequestDialogMessage``` type is your own custom type, inheriting either the abstract ```Message``` class or the ```IMessage``` interface.
-All types implementing ```IMessage``` have optional sender, id and tag fields.
+All types implementing ```IMessage``` have optional sender, sender type, id and tag fields
 
 **Modes**
 
