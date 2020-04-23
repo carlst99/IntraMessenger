@@ -3,9 +3,9 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 16
 VisualStudioVersion = 16.0.29009.5
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "IntraMessaging", "IntraMessaging\IntraMessaging.csproj", "{8300EECC-51E2-41C5-9EF6-40EAB7069B84}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "IntraMessenger", "IntraMessenger\IntraMessenger.csproj", "{8300EECC-51E2-41C5-9EF6-40EAB7069B84}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "IntraMessaging.Tests", "IntraMessaging.Tests\IntraMessaging.Tests.csproj", "{08AADE94-9C2F-4C85-A03E-1867363ED268}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "IntraMessenger.Tests", "IntraMessenger.Tests\IntraMessenger.Tests.csproj", "{08AADE94-9C2F-4C85-A03E-1867363ED268}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

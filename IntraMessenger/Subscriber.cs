@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Linq;
 
-namespace IntraMessaging
+namespace IntraMessenger
 {
     public class Subscriber
     {

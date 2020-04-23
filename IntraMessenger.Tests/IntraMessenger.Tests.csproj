@@ -27,7 +27,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\IntraMessaging\IntraMessaging.csproj" />
+    <ProjectReference Include="..\IntraMessaging\IntraMessenger.csproj" />
   </ItemGroup>
 
 </Project>

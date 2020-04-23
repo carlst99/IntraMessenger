@@ -1,9 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
 
-namespace IntraMessaging
+namespace IntraMessenger
 {
-    public interface IIntraMessenger
+    public interface IMessenger
     {
         ICollection<Subscriber> Subscribers { get; }
         IDictionary<Type, ICollection<Subscriber>> Subscriptions { get; }

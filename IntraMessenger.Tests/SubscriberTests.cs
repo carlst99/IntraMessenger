@@ -1,8 +1,8 @@
-using IntraMessaging.Tests.Context;
+using IntraMessenger.Tests.Context;
 using System;
 using Xunit;
 
-namespace IntraMessaging.Tests
+namespace IntraMessenger.Tests
 {
     public class SubscriberTests
     {

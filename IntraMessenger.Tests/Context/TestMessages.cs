@@ -1,4 +1,4 @@
-﻿namespace IntraMessaging.Tests.Context
+﻿namespace IntraMessenger.Tests.Context
 {
     public class TestMessage : Message
     {

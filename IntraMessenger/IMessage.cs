@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace IntraMessaging
+namespace IntraMessenger
 {
     public interface IMessage
     {

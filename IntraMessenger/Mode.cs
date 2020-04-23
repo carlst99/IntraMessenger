@@ -1,4 +1,4 @@
-﻿namespace IntraMessaging
+﻿namespace IntraMessenger
 {
     /// <summary>
     /// Defines a set of messaging modes

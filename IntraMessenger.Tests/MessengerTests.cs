@@ -1,23 +1,23 @@
-﻿using IntraMessaging.Tests.Context;
+﻿using IntraMessenger.Tests.Context;
 using System;
 using Xunit;
 
-namespace IntraMessaging.Tests
+namespace IntraMessenger.Tests
 {
-    public class IntraMessengerTests
+    public class MessengerTests
     {
         #region Property Tests
 
         [Fact]
         public void TestPropInstance()
         {
-            Assert.NotNull(IntraMessenger.Instance);
+            Assert.NotNull(Messenger.Instance);
         }
 
         [Fact]
         public void TestPropSubscriptions()
         {
-            IntraMessenger messenger = new IntraMessenger();
+            Messenger messenger = new Messenger();
 
             messenger.ChangeMode(Mode.HeavySubscribe);
             Assert.True(messenger.Subscriptions.IsReadOnly);
@@ -29,7 +29,7 @@ namespace IntraMessaging.Tests
         [Fact]
         public void TestPropSubscribers()
         {
-            IntraMessenger messenger = new IntraMessenger();
+            Messenger messenger = new Messenger();
 
             messenger.ChangeMode(Mode.HeavyMessaging);
             Assert.True(messenger.Subscribers.IsReadOnly);
@@ -46,7 +46,7 @@ namespace IntraMessaging.Tests
         public void TestSendHeavyMessaging()
         {
             bool callback = false;
-            IntraMessenger messenger = new IntraMessenger();
+            Messenger messenger = new Messenger();
             messenger.ChangeMode(Mode.HeavyMessaging);
             messenger.Subscribe((_) => callback = true);
 
@@ -58,7 +58,7 @@ namespace IntraMessaging.Tests
         public void TestSendHeavySubscribe()
         {
             bool callback = false;
-            IntraMessenger messenger = new IntraMessenger();
+            Messenger messenger = new Messenger();
             messenger.ChangeMode(Mode.HeavySubscribe);
             messenger.Subscribe((_) => callback = true);
 
@@ -85,7 +85,7 @@ namespace IntraMessaging.Tests
         {
             bool callback = false;
 
-            IntraMessenger messenger = new IntraMessenger();
+            Messenger messenger = new Messenger();
             Assert.Throws<ArgumentNullException>(() => messenger.Subscribe(null));
             Assert.Throws<ArgumentException>(() => messenger.Subscribe((_) => callback = true, new Type[] { typeof(object) }));
 
@@ -98,12 +98,12 @@ namespace IntraMessaging.Tests
             messenger.Reset(Mode.HeavySubscribe);
             messenger.Subscribe((_) => callback = true);
             Assert.NotEmpty(messenger.Subscriptions);
-            Assert.NotEmpty(messenger.Subscriptions[IntraMessenger.SEND_TO_ALL_TYPE]);
+            Assert.NotEmpty(messenger.Subscriptions[Messenger.SEND_TO_ALL_TYPE]);
 
             messenger.Reset(Mode.HeavySubscribe);
             messenger.Subscribe((_) => callback = true, new Type[] { typeof(TestMessage) });
             Assert.NotEmpty(messenger.Subscriptions);
-            Assert.Empty(messenger.Subscriptions[IntraMessenger.SEND_TO_ALL_TYPE]);
+            Assert.Empty(messenger.Subscriptions[Messenger.SEND_TO_ALL_TYPE]);
             Assert.True(messenger.Subscriptions.ContainsKey(typeof(TestMessage)));
 
             // This really just removes the build warning
@@ -114,7 +114,7 @@ namespace IntraMessaging.Tests
         public void TestUnsubscribe()
         {
             bool callback = false;
-            IntraMessenger messenger = new IntraMessenger();
+            Messenger messenger = new Messenger();
             messenger.ChangeMode(Mode.HeavyMessaging);
 
             Guid unsubKey = messenger.Subscribe((_) => callback = true);
@@ -138,7 +138,7 @@ namespace IntraMessaging.Tests
         public void TestChangeMode()
         {
             bool callback = false;
-            IntraMessenger messenger = new IntraMessenger();
+            Messenger messenger = new Messenger();
             messenger.ChangeMode(Mode.HeavyMessaging);
             Assert.Equal(Mode.HeavyMessaging, messenger.OperationMode);
             messenger.Subscribe((_) => callback = true, new Type[] { typeof(TestMessage)});
@@ -155,7 +155,7 @@ namespace IntraMessaging.Tests
             messenger.Subscribe((_) => callback = false);
             messenger.ChangeMode(Mode.HeavySubscribe);
             Assert.True(messenger.Subscriptions.Count == 1);
-            Assert.NotEmpty(messenger.Subscriptions[IntraMessenger.SEND_TO_ALL_TYPE]);
+            Assert.NotEmpty(messenger.Subscriptions[Messenger.SEND_TO_ALL_TYPE]);
 
             Assert.False(callback);
         }
@@ -164,7 +164,7 @@ namespace IntraMessaging.Tests
         public void TestReset()
         {
             bool callback = false;
-            IntraMessenger messenger = new IntraMessenger();
+            Messenger messenger = new Messenger();
             messenger.ChangeMode(Mode.HeavyMessaging);
             messenger.Subscribe((_) => callback = true);
 
@@ -176,7 +176,7 @@ namespace IntraMessaging.Tests
             messenger.Subscribe((_) => callback = true, new Type[] { typeof(TestMessage) });
             messenger.Reset();
             Assert.True(messenger.Subscriptions.Count == 1);
-            Assert.Empty(messenger.Subscriptions[IntraMessenger.SEND_TO_ALL_TYPE]);
+            Assert.Empty(messenger.Subscriptions[Messenger.SEND_TO_ALL_TYPE]);
 
             Assert.False(callback);
         }

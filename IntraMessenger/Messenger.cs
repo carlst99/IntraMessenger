@@ -4,11 +4,11 @@ using System.Collections.ObjectModel;
 using System.Linq;
 using System.Runtime.CompilerServices;
 
-[assembly: InternalsVisibleTo("IntraMessaging.Tests")]
+[assembly: InternalsVisibleTo("IntraMessenger.Tests")]
 
-namespace IntraMessaging
+namespace IntraMessenger
 {
-    public sealed class IntraMessenger : IIntraMessenger
+    public sealed class Messenger : IMessenger
     {
         internal static readonly Type SEND_TO_ALL_TYPE = typeof(IMessage);
 
@@ -21,7 +21,7 @@ namespace IntraMessaging
 
         #region Properties
 
-        public static IntraMessenger Instance { get; } = new IntraMessenger();
+        public static Messenger Instance { get; } = new Messenger();
 
         /// <summary>
         /// Gets a read only collection of the subscriptions by type to this messenger when using <see cref="Mode.HeavySubscribe"/>
@@ -63,12 +63,12 @@ namespace IntraMessaging
 
         #region Constructors
 
-        static IntraMessenger() { }
+        static Messenger() { }
 
         /// <summary>
         /// This ctor used internally to setup instance and for testing
         /// </summary>
-        internal IntraMessenger()
+        internal Messenger()
         {
             _subscribers = new Dictionary<Guid, Subscriber>();
             _subscriptions = new Dictionary<Type, List<Subscriber>>
