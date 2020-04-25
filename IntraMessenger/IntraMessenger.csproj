@@ -10,7 +10,7 @@
     <RepositoryUrl>https://github.com/carlst99/IntraMessenger</RepositoryUrl>
     <PackageTags>messaging loose-coupling</PackageTags>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
-    <Copyright>Copyright (c) 2019 Carl Stephens</Copyright>
+    <Copyright>Copyright (c) 2020 Carl Stephens</Copyright>
     <PackageLicenseFile>LICENSE</PackageLicenseFile>
     <NeutralLanguage>en-NZ</NeutralLanguage>
     <RepositoryType>Git</RepositoryType>
