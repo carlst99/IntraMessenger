@@ -14,17 +14,12 @@
     <PackageLicenseFile>LICENSE</PackageLicenseFile>
     <NeutralLanguage>en-NZ</NeutralLanguage>
     <RepositoryType>Git</RepositoryType>
-    <Version>1.0.3</Version>
-    <PackageReleaseNotes>BREAKING CHANGES:
-- IntraMessenger.Subscribe no longer takes Guid key, instead opting to return a unique key each time
-- Renamed IntraMessager to IntraMessenger
-- Removed IntraMessenger.EnqueueAsync
-- Renamed IntraMessenger.Enqueue to Send
+    <Version>2.0.0</Version>
+    <PackageReleaseNotes>Added SendAsync, and support for async methods that return a Task
 
-Other Changelog:
-- Add operation modes to suit different use cases
-- Added IntraMessenger.Reset
-</PackageReleaseNotes>
+BREAKING CHANGES
+- Removed Message, removed required properties from IMessage
+- Removed Messenger modes</PackageReleaseNotes>
   </PropertyGroup>
 
   <ItemGroup>
