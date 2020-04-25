@@ -1,10 +1,10 @@
 ﻿namespace IntraMessenger.Tests.Context
 {
-    public class TestMessage : Message
+    public class TestMessage : IMessage
     {
     }
 
-    public class UnregisteredMessage : Message
+    public class UnregisteredMessage : IMessage
     {
     }
 }

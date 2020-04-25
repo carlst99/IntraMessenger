@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
 using System.Runtime.CompilerServices;
+using System.Threading.Tasks;
 
 [assembly: InternalsVisibleTo("IntraMessenger.Tests")]
 
@@ -14,7 +15,6 @@ namespace IntraMessenger
 
         #region Fields
 
-        private readonly Dictionary<Guid, Subscriber> _subscribers;
         private readonly Dictionary<Type, List<Subscriber>> _subscriptions;
 
         #endregion
@@ -27,37 +27,14 @@ namespace IntraMessenger
         /// Gets a read only collection of the subscriptions by type to this messenger when using <see cref="Mode.HeavySubscribe"/>
         /// </summary>
         /// <exception cref="InvalidOperationException">Thrown when this messenger is not in the correct mode</exception>
-        public IDictionary<Type, ICollection<Subscriber>> Subscriptions
+        internal IDictionary<Type, IReadOnlyCollection<Subscriber>> Subscriptions
         {
             get
             {
-                if (OperationMode != Mode.HeavySubscribe)
-                    throw new InvalidOperationException("Can only retrieve this collection in " + nameof(Mode.HeavySubscribe) + " mode");
-
-                var converted = _subscriptions.ToDictionary(k => k.Key, v => (ICollection<Subscriber>)v.Value.AsReadOnly());
-                return new ReadOnlyDictionary<Type, ICollection<Subscriber>>(converted);
+                var converted = _subscriptions.ToDictionary(k => k.Key, v => (IReadOnlyCollection<Subscriber>)v.Value.AsReadOnly());
+                return new ReadOnlyDictionary<Type, IReadOnlyCollection<Subscriber>>(converted);
             }
         }
-
-        /// <summary>
-        /// Gets a read only collection of subscribers to this messenger when using <see cref="Mode.HeavyMessaging"/>
-        /// </summary>
-        /// <exception cref="InvalidOperationException">Thrown when this messenger is not in the correct mode</exception>
-        public ICollection<Subscriber> Subscribers
-        {
-            get
-            {
-                if (OperationMode != Mode.HeavyMessaging)
-                    throw new InvalidOperationException("Can only retrieve this collection in " + nameof(Mode.HeavyMessaging) + " mode");
-                else
-                    return _subscribers.Values.ToList().AsReadOnly();
-            }
-        }
-
-        /// <summary>
-        /// Gets the <see cref="Mode"/> of this messenger
-        /// </summary>
-        public Mode OperationMode { get; private set; }
 
         #endregion
 
@@ -70,83 +47,87 @@ namespace IntraMessenger
         /// </summary>
         internal Messenger()
         {
-            _subscribers = new Dictionary<Guid, Subscriber>();
             _subscriptions = new Dictionary<Type, List<Subscriber>>
             {
                 { SEND_TO_ALL_TYPE, new List<Subscriber>() }
             };
-            OperationMode = Mode.HeavySubscribe;
         }
 
         #endregion
 
         /// <summary>
-        /// Queues a message to be broadcast to all applicable subscriptions
+        /// Initiates the callback for any subscriptions depending on the message type being sent
         /// </summary>
         /// <typeparam name="T"></typeparam>
-        /// <param name="message"></param>
+        /// <param name="message">The message to send</param>
+        /// <remarks>This will run any async callbacks synchronously</remarks>
         public void Send<T>(T message) where T : IMessage, new()
         {
-            switch (OperationMode)
+            // Send to those who have subscribed to this message
+            if (_subscriptions.ContainsKey(typeof(T)))
             {
-                case Mode.HeavyMessaging:
-                    foreach (Subscriber subscriber in Subscribers)
-                        subscriber.InitiateCallback(message);
-                    break;
-                case Mode.HeavySubscribe:
-                    if (_subscriptions.ContainsKey(typeof(T)))
-                        _subscriptions[typeof(T)].ForEach(s => s.InitiateCallback(message, true));
-                    _subscriptions[SEND_TO_ALL_TYPE].ForEach(s => s.InitiateCallback(message, true));
-                    break;
+                foreach (Subscriber s in _subscriptions[typeof(T)])
+                    s.InitiateCallback(message);
             }
+            // Send to those who want all messages
+            foreach (Subscriber s in _subscriptions[SEND_TO_ALL_TYPE])
+                s.InitiateCallback(message);
+        }
+
+        /// <summary>
+        /// Initiates the callback asynchronously for any subscriptions depending on the message type being sent
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="message">The message to send</param>
+        public async Task SendAsync<T>(T message) where T : IMessage, new()
+        {
+            // Send to those who have subscribed to this message
+            if (_subscriptions.ContainsKey(typeof(T)))
+            {
+                foreach (Subscriber s in _subscriptions[typeof(T)])
+                    await s.InitiateCallbackAsync(message).ConfigureAwait(false);
+            }
+            // Send to those who want all messages
+            foreach (Subscriber s in _subscriptions[SEND_TO_ALL_TYPE])
+                await s.InitiateCallbackAsync(message).ConfigureAwait(false);
         }
 
         /// <summary>
         /// Creates a subscription to the message queue
         /// </summary>
-        /// <param name="callback">The callback to invoke when a message is broadcast</param>
+        /// <param name="action">The callback to invoke when a message is broadcast</param>
         /// <param name="requestedMessageTypes">The types of message to subscribe to</param>
         /// <returns>A GUID which can be used to unsubscribe from the message queue</returns>
         /// <exception cref="ArgumentNullException">Thrown when the callback is null</exception>
         /// <exception cref="ArgumentException">Thrown when the provided message types do not inherit from <see cref="IMessage"/></exception>
-        public Guid Subscribe(Action<IMessage> callback, Type[] requestedMessageTypes = null)
+        public Guid Subscribe(Action<IMessage> action, Type[] requestedMessageTypes = null)
         {
-            if (callback == null)
+            if (action == null)
                 throw new ArgumentNullException("Callback cannot be null");
 
-            if (requestedMessageTypes != null)
-            {
-                foreach (Type type in requestedMessageTypes)
-                {
-                    if (!typeof(IMessage).IsAssignableFrom(type))
-                        throw new ArgumentException("All requested message types must inherit " + nameof(IMessage));
-                }
-            }
+            Guid unsubKey = Guid.NewGuid();
+            Subscriber subscriber = new Subscriber(action, unsubKey);
+            Subscribe(subscriber, requestedMessageTypes);
+
+            return unsubKey;
+        }
+
+        /// <summary>
+        /// Creates a subscription to the message queue for an asynchronous method
+        /// </summary>
+        /// <param name="action">The callback to invoke asynchronously when a message is broadcast</param>
+        /// <param name="requestedMessageTypes">The types of message to subscribe to</param>
+        /// <returns>A GUID which can be used to unsubscribe from the message queue</returns>
+        /// <exception cref="ArgumentNullException">Thrown when the callback is null</exception>
+        /// <exception cref="ArgumentException">Thrown when the provided message types do not inherit from <see cref="IMessage"/></exception>
+        public Guid Subscribe(Func<IMessage, Task> action, Type[] requestedMessageTypes = null)
+        {
+            if (action == null)
+                throw new ArgumentNullException("Callback cannot be null");
 
             Guid unsubKey = Guid.NewGuid();
-            Subscriber subscriber = new Subscriber(callback, unsubKey, requestedMessageTypes);
-
-            switch (OperationMode)
-            {
-                case Mode.HeavyMessaging:
-                    _subscribers.Add(unsubKey, subscriber);
-                    break;
-                case Mode.HeavySubscribe:
-                    if (requestedMessageTypes == null)
-                    {
-                        _subscriptions[SEND_TO_ALL_TYPE].Add(subscriber);
-                        break;
-                    }
-
-                    foreach (Type type in requestedMessageTypes)
-                    {
-                        if (!_subscriptions.ContainsKey(type))
-                            _subscriptions.Add(type, new List<Subscriber>());
-
-                        _subscriptions[type].Add(subscriber);
-                    }
-                    break;
-            }
+            Subscriber subscriber = new Subscriber(action, unsubKey);
+            Subscribe(subscriber, requestedMessageTypes);
 
             return unsubKey;
         }
@@ -158,84 +139,51 @@ namespace IntraMessenger
         /// <exception cref="ArgumentException">Thrown when an invalid key is provided</exception>
         public void Unsubscribe(Guid unsubscribeKey)
         {
-            switch (OperationMode)
+            foreach (List<Subscriber> element in _subscriptions.Values)
             {
-                case Mode.HeavyMessaging:
-                    if (_subscribers.ContainsKey(unsubscribeKey))
-                        _subscribers.Remove(unsubscribeKey);
-                    else
-                        throw new ArgumentException("A subscriber with the specified unsubscription key does not exist");
-                    break;
-                case Mode.HeavySubscribe:
-                    foreach (List<Subscriber> element in _subscriptions.Values)
-                    {
-                        int index = element.FindIndex(s => s.UnsubscribeKey == unsubscribeKey);
-                        if (index != -1)
-                        {
-                            element.RemoveAt(index);
-                            return;
-                        }
-                    }
-                    throw new ArgumentException("A subscriber with the specified unsubscription key does not exist");
+                int index = element.FindIndex(s => s.UnsubscribeKey == unsubscribeKey);
+                if (index != -1)
+                {
+                    element.RemoveAt(index);
+                    return;
+                }
             }
-        }
-
-        /// <summary>
-        /// Changes the <see cref="Mode"/> of this messenger. Note that this can be an intensive operation
-        /// </summary>
-        /// <param name="changeTo">The mode to change to</param>
-        public void ChangeMode(Mode changeTo)
-        {
-            if (changeTo == OperationMode)
-                return;
-
-            switch (changeTo)
-            {
-                case Mode.HeavyMessaging:
-                    foreach (List<Subscriber> element in _subscriptions.Values)
-                    {
-                        foreach (Subscriber subscriber in element)
-                        {
-                            if (!_subscribers.ContainsKey(subscriber.UnsubscribeKey))
-                                _subscribers.Add(subscriber.UnsubscribeKey, subscriber);
-                        }
-                    }
-                    _subscriptions.Clear();
-                    _subscriptions.Add(SEND_TO_ALL_TYPE, new List<Subscriber>());
-                    break;
-                case Mode.HeavySubscribe:
-                    foreach (Subscriber element in _subscribers.Values)
-                    {
-                        if (element.MessageTypes == null)
-                        {
-                            _subscriptions[SEND_TO_ALL_TYPE].Add(element);
-                            continue;
-                        }
-
-                        foreach (Type type in element.MessageTypes)
-                        {
-                            if (!_subscriptions.ContainsKey(type))
-                                _subscriptions.Add(type, new List<Subscriber>());
-
-                            _subscriptions[type].Add(element);
-                        }
-                    }
-                    _subscribers.Clear();
-                    break;
-            }
-
-            OperationMode = changeTo;
+            throw new ArgumentException("A subscriber with the specified unsubscription key does not exist");
         }
 
         /// <summary>
         /// Clears any subscriptions and changes to the default mode <see cref="Mode.HeavySubscribe"/>
         /// </summary>
-        public void Reset(Mode mode = Mode.HeavySubscribe)
+        public void Reset()
         {
-            _subscribers.Clear();
             _subscriptions.Clear();
             _subscriptions.Add(SEND_TO_ALL_TYPE, new List<Subscriber>());
-            OperationMode = mode;
+        }
+
+        private void Subscribe(Subscriber subscriber, Type[] types)
+        {
+            if (types != null)
+            {
+                foreach (Type type in types)
+                {
+                    if (!typeof(IMessage).IsAssignableFrom(type))
+                        throw new ArgumentException("All requested message types must inherit " + nameof(IMessage));
+                }
+            }
+
+            if (types == null)
+            {
+                _subscriptions[SEND_TO_ALL_TYPE].Add(subscriber);
+            } else
+            {
+                foreach (Type type in types)
+                {
+                    if (!_subscriptions.ContainsKey(type))
+                        _subscriptions.Add(type, new List<Subscriber>());
+
+                    _subscriptions[type].Add(subscriber);
+                }
+            }
         }
     }
 }

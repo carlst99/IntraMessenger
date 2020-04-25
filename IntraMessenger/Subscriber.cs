@@ -1,49 +1,53 @@
 ﻿using System;
-using System.Linq;
+using System.Threading.Tasks;
 
 namespace IntraMessenger
 {
-    public class Subscriber
+    internal class Subscriber
     {
-        /// <summary>
-        /// Gets the type of subscription that this subscriber is requesting
-        /// </summary>
-        internal SubscriptionSet SubscriptionSet { get; }
+        #region Properties
+
+        public bool IsAsync { get; }
 
         /// <summary>
         /// Gets the callback invoked when a message is queued
         /// </summary>
-        public Action<IMessage> Callback { get; }
+        internal Action<IMessage> Callback { get; }
 
         /// <summary>
-        /// Gets the types of message that the subscriber wants to receive, provided <see cref="SubscriptionSet.Defined"/> is flagged
+        /// Gets the callback invoked asynchronously when a message is queued
         /// </summary>
-        public Type[] MessageTypes { get; }
+        internal Func<IMessage, Task> AsyncCallback { get; }
 
         /// <summary>
         /// Gets the key used to unsubscribe this subscriber
         /// </summary>
         public Guid UnsubscribeKey { get; }
 
-        internal Subscriber(Action<IMessage> callback, Guid unsubKey, Type[] messageTypes = null)
+        #endregion
+
+        #region Constructors
+
+        internal Subscriber(Action<IMessage> callback, Guid unsubKey)
+            : this(unsubKey)
         {
             Callback = callback;
-            UnsubscribeKey = unsubKey;
-            MessageTypes = messageTypes;
-
-            if (messageTypes == null || messageTypes.Length <= 0)
-                SubscriptionSet = SubscriptionSet.All;
-            else
-                SubscriptionSet = SubscriptionSet.Defined;
+            IsAsync = false;
         }
 
-        internal Subscriber(Action<IMessage> callback, Guid unsubKey, Type[] messageTypes, SubscriptionSet set)
+        internal Subscriber(Func<IMessage, Task> callback, Guid unsubKey)
+            : this(unsubKey)
         {
-            Callback = callback;
-            UnsubscribeKey = unsubKey;
-            MessageTypes = messageTypes;
-            SubscriptionSet = set;
+            AsyncCallback = callback;
+            IsAsync = true;
         }
+
+        private Subscriber(Guid unsubKey)
+        {
+            UnsubscribeKey = unsubKey;
+        }
+
+        #endregion
 
         /// <summary>
         /// Initiates the callback if the subscriber has requested to receive the type of the provided message
@@ -52,31 +56,20 @@ namespace IntraMessenger
         /// <param name="message">The message to send</param>
         /// <param name="skipTypeChecking">Indicates whether to skip the comparison to <see cref="MessageTypes"/> before initiating the callback</param>
         /// <returns>A value indicating whether the callback was run</returns>
-        internal bool InitiateCallback<T>(T message, bool skipTypeChecking = false) where T : IMessage
+        internal async Task InitiateCallbackAsync<T>(T message) where T : IMessage
         {
-            if (skipTypeChecking)
-            {
-                Callback.Invoke(message);
-                return true;
-            }
+            if (IsAsync)
+                await AsyncCallback(message).ConfigureAwait(false);
+            else
+                await Task.Run(() => Callback(message)).ConfigureAwait(false);
+        }
 
-            switch (SubscriptionSet)
-            {
-                case SubscriptionSet.All:
-                    Callback.Invoke(message);
-                    return true;
-                case SubscriptionSet.Defined:
-                    if (MessageTypes.Contains(typeof(T)))
-                    {
-                        Callback.Invoke(message);
-                        return true;
-                    } else
-                    {
-                        return false;
-                    }
-                default:
-                    return false;
-            }
+        internal void InitiateCallback<T>(T message) where T : IMessage
+        {
+            if (IsAsync)
+                AsyncCallback(message).Wait();
+            else
+                Callback(message);
         }
 
         #region Equality Overrides
@@ -84,12 +77,6 @@ namespace IntraMessenger
         public override bool Equals(object obj)
         {
             return obj is Subscriber sub
-                && Equals(sub);
-        }
-
-        public bool Equals(Subscriber sub)
-        {
-            return sub.SubscriptionSet.Equals(SubscriptionSet)
                 && sub.UnsubscribeKey.Equals(UnsubscribeKey);
         }
 
@@ -97,29 +84,10 @@ namespace IntraMessenger
         {
             unchecked
             {
-                int hash = 17;
-                hash = (hash * 23) + SubscriptionSet.GetHashCode();
-                hash = (hash * 23) + UnsubscribeKey.GetHashCode();
-                return hash;
+                return (17 * 23) + UnsubscribeKey.GetHashCode();
             }
         }
 
         #endregion
-    }
-
-    /// <summary>
-    /// Defines types of subscriptions that a subscriber can request
-    /// </summary>
-    internal enum SubscriptionSet
-    {
-        /// <summary>
-        /// Subscribed to all message types
-        /// </summary>
-        All = 0,
-
-        /// <summary>
-        /// Subscribed to a defined subset of message types
-        /// </summary>
-        Defined = 1
     }
 }

@@ -1,0 +1,1 @@
+reportgenerator -reports:coverage.cobertura.xml -targetdir:CoverageReport

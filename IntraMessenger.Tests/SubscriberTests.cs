@@ -1,5 +1,5 @@
-using IntraMessenger.Tests.Context;
 using System;
+using System.Threading.Tasks;
 using Xunit;
 
 namespace IntraMessenger.Tests
@@ -9,86 +9,95 @@ namespace IntraMessenger.Tests
         [Fact]
         public void TestConstructor()
         {
-            Subscriber subscriber = new Subscriber(null, Guid.Empty, null);
-            Assert.Equal(SubscriptionSet.All, subscriber.SubscriptionSet);
-
-            subscriber = new Subscriber(null, Guid.Empty, new Type[0]);
-            Assert.Equal(SubscriptionSet.All, subscriber.SubscriptionSet);
-
+            // Test that the unsubId and async flag are property set
             Guid id = Guid.NewGuid();
-            subscriber = new Subscriber(null, id, new Type[1]);
-            Assert.Equal(SubscriptionSet.Defined, subscriber.SubscriptionSet);
+            Subscriber subscriber = new Subscriber(DoAction, id);
             Assert.Equal(id, subscriber.UnsubscribeKey);
+            Assert.False(subscriber.IsAsync);
+
+            subscriber = new Subscriber(DoFunc, Guid.Empty);
+            Assert.True(subscriber.IsAsync);
         }
 
         [Fact]
-        public void TestInitiateCallbackWithAllTypes()
+        public void TestInitiateCallback()
         {
             bool callback = false;
-            Subscriber subscriber = new Subscriber((_) => callback = true, Guid.Empty, null);
+            Subscriber subscriber = new Subscriber((_) => callback = true, Guid.Empty);
 
-            Assert.True(subscriber.InitiateCallback<IMessage>(null));
+            subscriber.InitiateCallback<IMessage>(null);
             Assert.True(callback);
         }
 
         [Fact]
-        public void TestInitiateCallbackWithSpecifiedTypes()
+        public async Task TestInitiateCallbackAsync()
         {
             bool callback = false;
-            Type[] subTypes = new Type[] { typeof(TestMessage) };
-            Subscriber subscriber = new Subscriber((_) => callback = true, Guid.Empty, subTypes);
+            Subscriber subscriber = new Subscriber(async (_) => callback = true, Guid.Empty);
 
-            Assert.False(subscriber.InitiateCallback<IMessage>(null));
-            Assert.False(callback);
-
-            Assert.True(subscriber.InitiateCallback(new TestMessage()));
+            Assert.True(subscriber.IsAsync);
+            await subscriber.InitiateCallbackAsync<IMessage>(null);
             Assert.True(callback);
         }
 
         [Fact]
-        public void TestInitiateCallbackWithInvalidSet()
+        public void TestInitiateCallBackWithAsyncMethod()
         {
-            const SubscriptionSet set = (SubscriptionSet)255;
-            Subscriber s = new Subscriber(null, Guid.Empty, null, set);
-            Assert.False(s.InitiateCallback<IMessage>(null));
+            bool callback = false;
+            Subscriber subscriber = new Subscriber(async (_) => callback = true, Guid.Empty);
+
+            Assert.True(subscriber.IsAsync);
+            subscriber.InitiateCallback<IMessage>(null);
+            Assert.True(callback);
         }
 
         [Fact]
-        public void TestInitiateCallbackWithNoTypeChecking()
+        public async Task TestInitiateCallBackAsyncWithNonAsyncMethod()
         {
             bool callback = false;
-            Type[] subTypes = new Type[] { typeof(TestMessage) };
-            Subscriber subscriber = new Subscriber((_) => callback = true, Guid.Empty, subTypes);
+            Subscriber subscriber = new Subscriber((_) => callback = true, Guid.Empty);
 
-            subscriber.InitiateCallback<IMessage>(null, true);
+            Assert.False(subscriber.IsAsync);
+            await subscriber.InitiateCallbackAsync<IMessage>(null);
             Assert.True(callback);
         }
 
         [Fact]
         public void TestEquals()
         {
-            Subscriber s = GetSubscriber();
-            Subscriber s2 = GetSubscriber();
-            Subscriber s_GuidChange = new Subscriber(null, Guid.NewGuid());
-            Subscriber s_SetValueChange = new Subscriber(null, Guid.Empty, new Type[1]);
+            Subscriber s = GetSubscriber(out Guid id);
+            Subscriber s2 = GetSubscriber(out _);
+            Subscriber s3 = new Subscriber(null, id);
 
             Assert.NotEqual(s, new object());
-            Assert.Equal(s, s2);
-            Assert.NotEqual(s, s_GuidChange);
-            Assert.NotEqual(s, s_SetValueChange);
+            Assert.NotEqual(s, s2);
+            Assert.Equal(s, s3);
         }
 
         [Fact]
         public void TestGetHashCode()
         {
-            Subscriber s = GetSubscriber();
-            Subscriber s2 = GetSubscriber();
-            Subscriber s3 = new Subscriber(null, Guid.NewGuid());
+            Subscriber s = GetSubscriber(out Guid id);
+            Subscriber s2 = GetSubscriber(out _);
+            Subscriber s3 = new Subscriber(null, id);
 
-            Assert.Equal(s.GetHashCode(), s2.GetHashCode());
-            Assert.NotEqual(s.GetHashCode(), s3.GetHashCode());
+            Assert.NotEqual(s.GetHashCode(), s2.GetHashCode());
+            Assert.Equal(s.GetHashCode(), s3.GetHashCode());
         }
 
-        private Subscriber GetSubscriber() => new Subscriber(null, Guid.Empty);
+        private Subscriber GetSubscriber(out Guid id)
+        {
+            id = Guid.NewGuid();
+            return new Subscriber(null, id);
+        }
+
+        private void DoAction(IMessage message)
+        {
+        }
+
+        private Task DoFunc(IMessage message)
+        {
+            return Task.CompletedTask;
+        }
     }
 }

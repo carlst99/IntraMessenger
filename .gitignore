@@ -5,7 +5,7 @@
 
 # Coverage report files
 CoverageReport/
-coverage.xml
+coverage.cobertura.xml
 
 # User-specific files
 *.rsuser
