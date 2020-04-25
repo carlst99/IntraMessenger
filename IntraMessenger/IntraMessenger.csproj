@@ -5,10 +5,10 @@
     <Authors>Carl Stephens</Authors>
     <Company />
     <Product />
-    <Description>A simple centralised intra-app messager</Description>
-    <PackageProjectUrl>https://github.com/carlst99/IntraMessaging</PackageProjectUrl>
-    <RepositoryUrl>https://github.com/carlst99/IntraMessaging</RepositoryUrl>
-    <PackageTags>messaging</PackageTags>
+    <Description>A simple intra-app messenger. Supports subscribing to and sending custom messages without tight coupling</Description>
+    <PackageProjectUrl>https://github.com/carlst99/IntraMessenger</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/carlst99/IntraMessenger</RepositoryUrl>
+    <PackageTags>messaging loose-coupling</PackageTags>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
     <Copyright>Copyright (c) 2019 Carl Stephens</Copyright>
     <PackageLicenseFile>LICENSE</PackageLicenseFile>
